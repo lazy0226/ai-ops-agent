@@ -1,0 +1,182 @@
+[
+    {
+        "code": "SOP-LNX‑001",
+        "title": "普通用户读取/etc/shadow权限拒绝",
+        "keywords": ["Permission denied", "/etc/shadow", "权限不够"],
+        "content": "排查步骤：\n1. 确认当前登录用户id，id命令查看uid\n2. 查看文件权限：ls -l /etc/shadow\n3. 该文件仅root可读，普通用户没有访问权限\n4. 使用sudo提升权限执行读取操作\n5. 验证：sudo cat /etc/shadow 确认可以读取内容"
+    },
+    {
+        "code": "SOP‑LNX‑002",
+        "title": "普通用户修改文件i属性权限不足",
+        "keywords": ["Operation not permitted", "chattr", "i不可变属性"],
+        "content": "排查步骤：\n1. lsattr test.txt 查看文件的扩展属性\n2. 确认文件带有i(不可修改)标记\n3. chattr需要root权限才能修改扩展属性\n4. 使用root或者sudo执行chattr -i test.txt解除锁定\n5. 验证：lsattr test.txt确认i标记消失"
+    },
+    {
+        "code": "SOP‑LNX‑003",
+        "title": "执行不存在的外部命令，提示command not found",
+        "keywords": ["command not found", "命令不存在"],
+        "content": "排查步骤：\n1. 确认命令名字是否拼写错误\n2. which 命令名，查看系统是否能够检索该程序\n3. 如果软件未安装，则yum / apt安装对应软件包\n4. 如果脚本，检查是否写对路径，或者添加执行权限\n5. 验证：正确输入命令测试执行"
+    },
+    {
+        "code": "SOP‑LNX‑004",
+        "title": "普通用户修改网卡配置权限报错",
+        "keywords": ["Operation not permitted", "ip link set", "网卡操作权限"],
+        "content": "排查步骤：\n1. ip a先确认网卡设备名称是否正确\n2. 修改网卡硬件配置属于内核操作，普通用户无权执行\n3. 使用sudo或者切换root用户执行网卡修改指令\n4. 修改完成后可执行ip a查看网卡状态\n5. 验证：确认网卡状态修改生效"
+    },
+    {
+        "code": "SOP‑LNX‑005",
+        "title": "目录不存在，cd切换失败",
+        "keywords": ["No such file or directory", "cd进入不存在目录"],
+        "content": "排查步骤：\n1. ls查看当前目录下有哪些文件夹，核对目录名称拼写\n2. 如果目录确实缺失，使用mkdir创建该目录\n3. 注意区分大小写，Linux路径大小写敏感\n4. 确认路径是相对路径还是绝对路径\n5. 验证：cd进入目标目录，观察提示符变化"
+    },
+    {
+        "code": "SOP‑LNX‑006",
+        "title": "vi编辑文件保存时磁盘已满写入失败",
+        "keywords": ["No space left on device", "vi写入失败，磁盘耗尽"],
+        "content": "排查步骤：\n1. :q!先退出vi，不保存文件\n2. df‑h查看磁盘分区使用率\n3. du‑sh *定位占用空间较大的目录和文件\n4. 删除无用日志、临时文件释放磁盘空间\n5. 验证：重新vi编辑保存文件"
+    },
+    {
+        "code": "SOP‑LNX‑007",
+        "title": "普通用户尝试重新挂载文件系统报错",
+        "keywords": ["only root can use options", "mount remount", "挂载需要root"],
+        "content": "排查步骤：\n1. mount属于系统底层挂载操作，普通用户不允许执行挂载选项\n2. 使用sudo或者切换root执行mount‑o remount,ro /\n3. 查看/etc/fstab确认挂载配置是否正确\n4. 观察dmesg查看磁盘底层异常\n5. 验证：mount确认挂载状态"
+    },
+    {
+        "code": "SOP‑LNX‑008",
+        "title": "删除不存在的文件，rm报错",
+        "keywords": ["No such file or directory", "rm删除不存在文件"],
+        "content": "排查步骤：\n1. ls核对当前目录下的文件名\n2. 确认是否已经被别的进程提前删除\n3. 如果脚本批量删除可增加‑f参数屏蔽告警\n4. 检查是否输入错误文件名\n5. 验证：ls确认目标文件状态"
+    },
+    {
+        "code": "SOP‑LNX‑009",
+        "title": "脚本没有x执行权限，无法直接运行脚本",
+        "keywords": ["Permission denied", "shell脚本缺少执行权限"],
+        "content": "排查步骤：\n1. ls‑l test.sh查看脚本权限位\n2. chmod +x test.sh 添加脚本的可执行权限\n3. 或者直接使用bash test.sh解释运行脚本\n4. 检查脚本第一行shebang解释器路径是否正确\n5. 验证：./test.sh直接运行脚本"
+    },
+    {
+        "code": "SOP‑LNX‑010",
+        "title": "tar解压时指定的压缩包文件不存在",
+        "keywords": ["Cannot open: No such file or directory", "tar解压找不到文件"],
+        "content": "排查步骤：\n1. ls确认压缩包是否存在，核对文件名\n2. 确认当前工作目录，是绝对路径还是相对路径\n3. 如果文件存放别的目录写完整路径\n4. 检查文件是否下载不全或者已经删除\n5. 验证：tar‑zxvf正确解压"
+    },
+    {
+        "code": "SOP‑LNX‑011",
+        "title": "用户试图进入普通文件而不是目录(cd报错)",
+        "keywords": ["Not a directory", "cd进入普通文件"],
+        "content": "排查步骤：\n1. ls‑l确认该对象是普通文件不是目录\n2. 如果需要目录，则mkdir新建目录\n3. mv重命名区分文件与目录名字\n4. 核对输入名称，不要误写文件名\n5. 验证：cd正确目录完成跳转"
+    },
+    {
+        "code": "SOP‑LNX‑012",
+        "title": "grep搜索不存在的文件",
+        "keywords": ["No such file or directory", "grep读取不存在文件"],
+        "content": "排查步骤：\n1. ls检查文件是否存在\n2. 确认路径是否书写错误\n3. 如果文件确实缺失，确认是否被误删除\n4. 若是日志文件，确认服务是否已经生成日志\n5. 验证：grep针对真实存在的文件检索"
+    },
+    {
+        "code": "SOP‑LNX‑013",
+        "title": "mv移动文件，目标目录不存在报错",
+        "keywords": ["No such file or directory", "mv移动至不存在目录"],
+        "content": "排查步骤：\n1. ls查看目标目录是否存在\n2. 如果目标目录不存在先mkdir创建目录\n3. 区分mv重命名和移动目录两种用法\n4. 检查路径书写，相对路径、绝对路径\n5. 验证：ls查看移动后的文件位置"
+    },
+    {
+        "code": "SOP‑LNX‑014",
+        "title": "dd写入磁盘，磁盘空间耗尽报错",
+        "keywords": ["No space left on device", "dd写满磁盘"],
+        "content": "排查步骤：\n1. df‑h确认磁盘使用率已经100%\n2. du‑sh /*查找占用空间巨大的文件\n3. 删除无用大文件释放存储空间\n4. 清理系统旧日志释放inode与磁盘块\n5. 验证：df‑h确认磁盘空间恢复"
+    },
+    {
+        "code": "SOP‑LNX‑015",
+        "title": "cp复制，源文件不存在",
+        "keywords": ["No such file or directory", "cp找不到源文件"],
+        "content": "排查步骤：\n1. ls核对源文件名称与路径\n2. 确认当前所在工作目录\n3. 检查大小写拼写错误\n4. 如果需要该文件，则重新生成源文件\n5. 验证：cp完成复制，ls查看副本"
+    },
+    {
+        "code": "SOP‑LNX‑016",
+        "title": "普通用户修改系统配置文件/etc/sysctl.conf权限拒绝",
+        "keywords": ["Permission denied", "修改系统etc配置文件"],
+        "content": "排查步骤：\n1. ls‑l /etc/sysctl.conf查看文件权限，归属root\n2. etc下面系统配置文件普通用户不可写\n3. 使用sudo vi /etc/sysctl.conf编辑修改\n4. 修改完成执行sysctl‑p生效内核参数\n5. 验证：sysctl‑a确认内核参数生效"
+    },
+    {
+        "code": "SOP‑LNX‑017",
+        "title": "ssh连接主机IP正确但是端口错误连接失败",
+        "keywords": ["Connection refused", "ssh端口错误"],
+        "content": "排查步骤：\n1. ping IP确认网络层可达\n2. ss‑tlnp | grep sshd确认sshd监听端口号\n3. 如果ssh非22端口，使用‑p参数指定端口登录\n4. 检查防火墙是否放行ssh端口\n5. 验证：ssh使用正确端口远程登录"
+    },
+    {
+        "code": "SOP‑LNX‑018",
+        "title": "chmod修改系统文件权限普通用户执行报错",
+        "keywords": ["Operation not permitted", "chmod修改系统文件"],
+        "content": "排查步骤：\n1. lsattr检查文件是否设置i不可变标记\n2. ls‑l确认文件属主是root\n3. 使用sudo或者root账号执行chmod修改权限\n4. 谨慎修改系统文件权限，避免安全风险\n5. 验证：ls‑l确认权限变更结果"
+    },
+    {
+        "code": "SOP‑LNX‑019",
+        "title": "ping一个不存在的主机域名，域名解析失败",
+        "keywords": ["Name or service not known", "DNS解析失败"],
+        "content": "排查步骤：\n1. cat /etc/resolv.conf检查DNS服务器配置\n2. nslookup测试域名解析\n3. ping公网DNS 114.114.114.114确认底层网络\n4. 修改resolv.conf写入有效的DNS地址\n5. 验证：ping域名测试解析"
+    },
+    {
+        "code": "SOP‑LNX‑020",
+        "title": "解压zip，系统没有安装unzip命令",
+        "keywords": ["command not found", "unzip未安装"],
+        "content": "排查步骤：\n1. which unzip确认系统找不到该程序\n2. 使用yum install‑y unzip或者apt install unzip安装软件包\n3. 确认压缩包确实是zip格式(file命令查看)\n4. 执行unzip解压文件\n5. 验证：ls查看解压后的文件"
+    },
+    {
+        "code": "SOP‑LNX‑021",
+        "title": "useradd普通用户试图新建系统账号权限拒绝",
+        "keywords": ["Permission denied", "useradd新建用户"],
+        "content": "排查步骤：\n1. useradd属于系统账号管理，需要root权限\n2. 使用sudo useradd创建新系统账号\n3. 之后passwd为账号设置登录密码\n4. /etc/passwd查看账号是否创建成功\n5. 验证：su切换到新建用户测试登录"
+    },
+    {
+        "code": "SOP‑LNX‑022",
+        "title": "mkdir创建嵌套目录没有‑p参数，中间目录缺失报错",
+        "keywords": ["No such file or directory", "mkdir嵌套目录缺少‑p"],
+        "content": "排查步骤：\n1. ls检查上层目录是否已经存在\n2. 创建多级嵌套目录需要使用mkdir‑p a/b/c\n3. 先手动逐层创建上层目录也可以\n4. 核对目录层级名称拼写\n5. 验证：ls‑R查看完整目录树"
+    },
+    {
+        "code": "SOP‑LNX‑023",
+        "title": "systemctl启动不存在的服务",
+        "keywords": ["Failed to start unit not found", "服务名字写错"],
+        "content": "排查步骤：\n1. systemctl list‑unit‑files | grep服务名核对服务名称\n2. 确认该服务对应的软件包是否已经安装\n3. 如果软件未安装先安装对应程序\n4. 确认service单元文件是否放置正确路径\n5. 验证：systemctl status正确服务名称查看状态"
+    },
+    {
+        "code": "SOP‑LNX‑024",
+        "title": "cat读取一个空目录而不是文件",
+        "keywords": ["Is a directory", "cat读取目录报错"],
+        "content": "排查步骤：\n1. ls‑l确认该路径对象是目录而非普通文本文件\n2. 如果需要浏览目录内容执行ls，不要使用cat\n3. 如果需要查看目录内文本文件，写上完整文件名\n4. 核对输入命令参数\n5. 验证：cat读取正确文本文件"
+    },
+    {
+        "code": "SOP‑LNX‑025",
+        "title": "rm‑rf删除挂载点目录，设备忙无法删除",
+        "keywords": ["Device or resource busy", "rm删除挂载目录设备忙"],
+        "content": "排查步骤：\n1. mount查看该目录是一个挂载点\n2. fuser‑m 挂载点确认哪些进程占用文件系统\n3. umount先卸载该文件系统\n4. 卸载之后再执行rm‑rf删除目录\n5. 验证：ls确认目录已经删除"
+    },
+    {
+        "code": "SOP‑LNX‑026",
+        "title": "curl访问服务端口，防火墙拦截提示连接超时",
+        "keywords": ["Connection timed out", "防火墙拦截端口访问"],
+        "content": "排查步骤：\n1. telnet或者nc测试端口连通性\n2. 在服务器端查看firewalld状态systemctl status firewalld\n3. firewall‑cmd‑‑list‑all查看放行端口列表\n4. 添加放行端口或者临时关闭防火墙测试\n5. 验证：curl访问服务接口"
+    },
+    {
+        "code": "SOP‑LNX‑027",
+        "title": "普通用户执行reboot重启服务器权限报错",
+        "keywords": ["Permission denied", "reboot普通用户重启主机"],
+        "content": "排查步骤：\n1. 重启属于系统硬件管理操作，普通用户无权直接执行reboot\n2. 使用sudo reboot执行重启操作\n3. 查看日志/var/log/messages观察系统重启记录\n4. 等待服务器重启完成后重新ssh登录\n5. 验证：登录后uptime查看开机时间确认重启"
+    },
+    {
+        "code": "SOP‑LNX‑028",
+        "title": "find搜索路径书写错误，路径不存在",
+        "keywords": ["No such file or directory", "find错误搜索路径"],
+        "content": "排查步骤：\n1. ls核对起始搜索路径是否真实存在\n2. 检查绝对路径书写有没有少写斜杠\n3. 如果目录确实丢失，确认是否被误删除\n4. 修正find后面的起始目录参数\n5. 验证：find在有效目录下检索文件"
+    },
+    {
+        "code": "SOP‑LNX‑029",
+        "title": "passwd尝试修改其他用户密码，普通用户权限不足",
+        "keywords": ["Permission denied", "passwd修改别的用户密码"],
+        "content": "排查步骤：\n1. 普通用户仅允许修改自己账号密码\n2. 修改其他账号密码需要root或者sudo权限\n3. sudo passwd username修改指定用户密码\n4. /etc/shadow记录加密后的用户密码\n5. 验证：su使用新密码登录该账号"
+    },
+    {
+        "code": "SOP‑LNX‑030",
+        "title": "ln创建软链接，源文件路径写错导致失效软链接",
+        "keywords": ["broken symbolic link", "失效软链接，红色闪烁链接"],
+        "content": "排查步骤：\n1. ls‑l查看软链接，发现指向的源文件路径错误\n2. rm删除已经失效的软链接\n3. 创建软链接注意区分相对路径与绝对路径\n4. ln‑s 正确源文件 链接名称重建软链接\n5. 验证：访问软链接可以正常读取文件内容"
+    }
+]

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpsAgent - 智能运维助手</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 90vh; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 1.2em; font-weight: bold; }
+        #chat-box { flex: 1; padding: 20px; overflow-y: auto; background: #f9f9f9; }
+        .message { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .user-msg { align-items: flex-end; }
+        .agent-msg { align-items: flex-start; }
+        .bubble { max-width: 70%; padding: 12px 18px; border-radius: 18px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; font-size: 0.95em; }
+        .user-msg .bubble { background: #007bff; color: white; border-bottom-right-radius: 4px; }
+        .agent-msg .bubble { background: #e2e8f0; color: #333; border-bottom-left-radius: 4px; }
+        .input-area { display: flex; padding: 20px; background: white; border-top: 1px solid #eee; }
+        input[type="text"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 1em; }
+        button { margin-left: 10px; padding: 12px 25px; background: #2c3e50; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 1em; transition: background 0.3s; }
+        button:hover { background: #1a252f; }
+        button:disabled { background: #999; cursor: not-allowed; }
+        
+        /* 👇 按钮样式优化：等宽，字号统一 */
+        .btn-confirm { background: #27ae60; padding: 10px 0; width: 90px; margin: 5px; border-radius: 8px; font-size: 0.95em; font-weight: bold; }
+        .btn-confirm:hover:not(:disabled) { background: #219653; }
+        .btn-reject { background: #e74c3c; padding: 10px 0; width: 90px; margin: 5px; border-radius: 8px; font-size: 0.95em; font-weight: bold; }
+        .btn-reject:hover:not(:disabled) { background: #c0392b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">OpsAgent 智能运维助手 (V4 网页版)</div>
+        <div id="chat-box">
+            <div class="message agent-msg">
+                <div class="bubble">你好！我是你的智能运维 Agent，请在下方描述你的问题（例如：帮我看一下虚拟机的磁盘空间）。</div>
+            </div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="输入你的问题..." onkeypress="handleKeyPress(event)">
+            <button id="send-btn" onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function appendMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}-msg`;
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerText = text; // 用 innerText 自动处理转义，防止 XSS
+            msgDiv.appendChild(bubble);
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            userInput.value = '';
+            sendBtn.disabled = true;
+            sendBtn.innerText = '排查中...';
+
+            const loadingMsgDiv = document.createElement('div');
+            loadingMsgDiv.className = `message agent-msg`;
+            loadingMsgDiv.innerHTML = `<div class="bubble" style="color: #666; font-style: italic;">Agent 正在连接虚拟机排查，请稍候...</div>`;
+            chatBox.appendChild(loadingMsgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
+                chatBox.removeChild(loadingMsgDiv);
+                
+                if (data.reply.includes("[NEED_CONFIRM]")) {
+                    const command = data.reply.replace("[NEED_CONFIRM]", "").trim();
+                    appendConfirmMessage(command);
+                } else {
+                    appendMessage(data.reply, 'agent');
+                }
+            } catch (error) {
+                chatBox.removeChild(loadingMsgDiv);
+                appendMessage('❌ 网络请求失败，请检查后端是否启动。', 'agent');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = '发送';
+                userInput.focus();
+            }
+        }
+
+        // 👇 重写确认弹窗逻辑：用 data 属性存储命令，避免单引号转义 Bug
+        function appendConfirmMessage(command) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message agent-msg`;
+            
+            // 防止命令里带有 HTML 特殊字符，先做转义
+            const safeCommand = command.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            msgDiv.innerHTML = `
+                <div class="bubble" style="border-left: 4px solid #e67e22;">
+                    ⚠️ <b>安全预警：AI 请求执行白名单外命令</b><br>
+                    <code style="background:#f4f4f4; padding:2px 4px; border-radius:4px; word-break: break-all;">${safeCommand}</code>
+                    <div style="margin-top:12px; display: flex; justify-content: flex-start;">
+                        <button class="btn-confirm confirm-btn">同意</button>
+                        <button class="btn-reject reject-btn">拒绝</button>
+                    </div>
+                </div>`;
+            
+            // 动态绑定事件，避开 onclick 的转义陷阱
+            const confirmBtn = msgDiv.querySelector('.confirm-btn');
+            const rejectBtn = msgDiv.querySelector('.reject-btn');
+            
+            confirmBtn.addEventListener('click', () => {
+                confirmBtn.disabled = true; rejectBtn.disabled = true;
+                sendConfirm(command, true);
+            });
+            rejectBtn.addEventListener('click', () => {
+                confirmBtn.disabled = true; rejectBtn.disabled = true;
+                sendConfirm(command, false);
+            });
+
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendConfirm(command, isAgree) {
+            const msg = isAgree ? "同意" : "拒绝";
+            appendMessage(msg, 'user');
+            
+            sendBtn.disabled = true;
+            sendBtn.innerText = '处理中...';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: msg,
+                        confirm_command: command,
+                        confirm_action: isAgree ? 'agree' : 'reject' // 👈 传给后端明确动作
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.reply.includes("[NEED_CONFIRM]")) {
+                    const newCmd = data.reply.replace("[NEED_CONFIRM]", "").trim();
+                    appendConfirmMessage(newCmd);
+                } else {
+                    appendMessage(data.reply, 'agent');
+                }
+            } catch (error) {
+                appendMessage('❌ 网络请求失败。', 'agent');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = '发送';
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
